@@ -1,0 +1,210 @@
+
+*******************  Run & Deploy Spring Boot CRUD Application With MySQL on K8S cluster  **************************
+
+
+https://www.youtube.com/watch?v=pIPji3_rYPY
+
+Java techie
+
+
+1. Create a basic spring boot application with data getting stored in mysql db and test the application through postman
+2. Now, we first need to deploy mysql db instance to the K8s pod inside the k8s cluster
+3. For that, execute ->  minikube start
+4. To make Kubernetes read your local Docker repository (we gave permission to K8s to read my Docker repository) ->
+
+eval $(minikube docker-env)   // To point your shell to minikube's docker-daemon, run this command OR it means we are syncing both docker and minikube
+
+
+6. Execute ->  docker images to verify
+
+
+7. Now, we need to pull the mysql image from the docker hub but we are not going to do it manually.
+
+Instead, while creating the Deployment object using yaml configuration, we will specify the latest mysql version so that k8s Deployment object will take care of pulling the mysql image and it will run that image in a separate k8s pod.
+
+So, we will create Deployment and Service object using yaml configuration.
+
+db-deployment.yaml
+
+
+Now, directly navigate to this path where your springbok project is there -
+
+cd /Users/himanshubector/Downloads/Microservices\ HandsOn\ April\ 2023/springboot-crud-k8s-example
+
+Execute the command ->  kubectl apply -f db-deployment.yaml
+
+
+
+To verify if persistentvolumeclaim, deployment and service has been created successfully,
+
+kubectl get deployments
+
+
+kubectl get pods
+
+
+
+If you get pods status as ‘ImagePullBackOff’, execute ->
+
+docker login
+
+And also I commented off the line —->  args: "--ignore-db-dir=lost+found"  from the db-deployment.yaml file
+And applied this yaml configuration again
+
+
+
+And to check exactly the error in detail ——>
+
+kubectl describe pod <pod_name>
+
+kubectl logs <pod_name>
+
+kubectl logs <pod_name> <container_name>
+
+
+
+Also, Check if the PVC is bound and if a PV is successfully created by running kubectl get pv and kubectl get pvc.
+
+
+
+
+
+To delete a deployment if required ->
+
+kubectl delete deployment <deployment_name>
+
+
+To delete a service if required ->
+
+kubectl delete service <service_name>
+
+
+
+
+
+Now, we will directly login to this mysql pod to check the schema status
+
+
+To go inside the mysql pod, execute the command ——>
+
+kubectl get pods (you will get the pod name from here)
+
+kubectl exec -it <pod_name> --  /bin/bash
+
+
+By using --, you are telling Kubernetes that anything after it should be treated as a command to run inside the container.
+
+
+Now, execute ->  mysql -u root -p
+
+
+
+
+=====
+To go inside a container running in a Pod, you can use the kubectl exec command with the -it options followed by the name of the Pod and the command to run inside the container:
+
+
+kubectl exec -it <pod-name> <command>
+
+For example, to start a Bash shell inside a container running in a Pod named my-pod, you can use the following command:
+
+
+
+kubectl exec -it my-pod /bin/bash
+
+This will start a Bash shell inside the default container running in the my-pod Pod, which you can use to execute commands and debug the container or application running inside it. Note that the -it options allow you to interact with the shell using an interactive terminal session.
+=====
+
+
+8. Now, we need to Dockerize the springboot application by creating docker image using Dockerfile
+
+
+Use following mvn command to create jar file and then proceed with docker steps as mentioned in video —>>
+
+mvn clean install -Dmaven.test.skip=true
+
+OR
+
+You can skip the maven tests from the maven configuration settings in IntelliJ
+
+
+
+Now, create the docker image using the command ->
+
+docker build -t springboot-crud-k8s:1.0 .
+
+
+
+Now, create the deployment and service object for the springboot application using app-deployment.yaml configuration file
+
+Then,
+
+Execute the command ->
+
+kubectl apply -f app-deployment.yaml
+
+
+
+Verify using the commands ->
+
+kubectl get deployments
+
+kubectl get pods
+
+kubectl get svc
+
+
+
+
+Now, check the logs for particular springboot application pod
+
+
+kubectl logs <pod_name>
+
+
+
+To get the ip, execute the command ->
+
+kubectl get svc  OR  minikube ip
+
+
+
+To go inside the mysql pod ->
+
+kubectl exec -it mysql-7f97668bb8-gmjt7 -- /bin/bash
+
+
+Then, execute to login into mysql db ->
+
+mysql -h mysql -u root -p
+
+
+
+In browser, access the url using ip and port you got from kubectl get svc command ->
+
+
+http://10.96.2.238:32527/orders
+
+
+OR
+
+
+Execute the command  minikube service <service_name> --url ->
+
+This will return something like http://127.0.0.1:64198
+
+Access this url in browser ->
+
+http://127.0.0.1:64198/orders
+
+
+
+Check health of each component using command ->
+
+minikube dashboard
+
+
+
+Mysql db and Springboot application are interacting with each other because they are inside the same node in a k8s cluster.
+
+

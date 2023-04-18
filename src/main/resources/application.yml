@@ -1,0 +1,49 @@
+
+# Here, we have given initially the local mysql db related configuration which is running in our local machine.
+# We need to change this to the Pod configuration where our mysql instance is running. (i.e. to the Mysql Pod which is running inside our K8s cluster)
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    #url: jdbc:mysql://localhost:3306/kubernetes_db
+    url: jdbc:mysql://${DB_HOST}/${DB_NAME}?allowPublicKeyRetrieval=true
+    #username: root
+    #password: jaiganeshji
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    generate-ddl: true
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+
+
+
+
+ # Error Details:
+
+ # Caused by: com.mysql.cj.exceptions.UnableToConnectException: Public Key Retrieval is not allowed
+
+
+# This error message typically occurs when attempting to connect to a MySQL database using SSL/TLS encryption,
+# but the SSL/TLS configuration of the database server is not compatible with the Java version being used by the Spring Boot application.
+
+
+ # To resolve this issue, Add the following parameter to the JDBC URL for your MySQL database connection string -
+ # ?allowPublicKeyRetrieval=true
+
+  # This parameter tells the JDBC driver to allow public key retrieval, which may be necessary if
+ # the SSL/TLS certificate used by the database server is not trusted by default.
+
+
+
+
+  # Upgrade your version of Java to the latest version, which should include support for the latest SSL/TLS protocols and ciphers.
+  # If you are using an older version of Java, it may not support the SSL/TLS configuration of the database server.
+
+  # Update the SSL/TLS configuration of the database server to use a more recent protocol and cipher suite that is
+  # compatible with the Java version being used by the Spring Boot application. This may involve updating the SSL/TLS certificate, the encryption algorithm, or other settings on the database server.
+
